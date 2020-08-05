@@ -7,8 +7,6 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 
-DEBUG = True
-
 def GetStockInfo(date, stock_list):
 
     # Download stock information
@@ -29,45 +27,64 @@ def GetStockInfo(date, stock_list):
     select_df.reset_index(drop=True, inplace=True)
     
     return select_df
-    
-def UpdateTodayPrice():
-    
-    # Get select stock list
-    rootPath = os.getcwd()
-    out_dir = os.path.join(rootPath, "data")
-    
-    with open(os.path.join(rootPath,"stock_list.txt"), 'r') as fObj:
+
+def UpdateStockListByRecord(path_stockRecord, path_stockList):
+
+    stockRecord = pd.read_excel(path_stockRecord, dtype=str, sheet_name = "Record")
+    stockList_bought = pd.unique(stockRecord["Stock"])
+
+    with open(path_stockList, 'r') as fObj:
         stock_list = fObj.readlines()
     stock_list = [elem.replace('\n', '') for elem in stock_list]
+
+    for stock_b in  stockList_bought:
+        if stock_b not in stock_list:
+            stock_list.append(stock_b)
+
+    return stock_list
+    
+    
+def UpdateTodayPrice(outFName = "TodayPrice.xlsx"):
+    
+    print("\n[Update Today Price]")
+    # Get select stock list
+    print("Get stock information ...")
+    rootPath = os.getcwd()
+    out_dir = os.path.join(rootPath, "data")
+    path_stockRecord = os.path.join(rootPath, "data", "UserDefine", "StockRecord.xlsx")
+    path_stockList = os.path.join(rootPath, "data", "UserDefine", "stock_list.txt")
+
+    # Read Stock List (After Update Stock List By Record)
+    stock_list = UpdateStockListByRecord(path_stockRecord, path_stockList)
     
     # Get date today
     today = date.today()
     yesterday = today - timedelta(days=1)
     
-    if DEBUG:
-        today = "20200717"
-        yesterday = "20200716"
+    if today.weekday() in [5,6]:
+        print("Today is a weekend day. The stock market don't open.")
+
+        today = today - timedelta(days=(today.weekday()-4))   
+        yesterday = today - timedelta(days=1) 
+
+        print("Update Information on Friday ({})".format(today.strftime("%Y.%m.%d")))
         
-    else:
-        if today.weekday() in [5,6]:
-            raise ValueError("Today is a weekend day. The stock market don't open.")
-        else:
-            today = today.strftime("%Y%m%d")
-            yesterday = yesterday.strftime("%Y%m%d")
+    today = today.strftime("%Y%m%d")
+    yesterday = yesterday.strftime("%Y%m%d")
     
     df_today = GetStockInfo(today, stock_list)
     df_yesterday = GetStockInfo(yesterday, stock_list)
     
     # Calculate price change
+    print("Write data to \"{}\"".format(os.path.join(out_dir, outFName)))
     price_today = np.array(df_today.iloc[:,-1]).astype(float)
     price_yesterday = np.array(df_yesterday.iloc[:,-1]).astype(float)
     df_today["漲跌"] = np.round((price_today-price_yesterday)/price_yesterday*100,2)
     
     # Output as csv file
-    df_today.iloc[:,0] =  df_today.iloc[:,0].apply(lambda x: 's'+x)
-    
+#    df_today.iloc[:,0] =  df_today.iloc[:,0].apply(lambda x: 's'+x)
     os.makedirs(out_dir, exist_ok=True)
-    df_today.to_csv(os.path.join(out_dir, "TodayPrice.csv"),
+    df_today.to_excel(os.path.join(out_dir, outFName),
                      index=False,
                      encoding="utf_8_sig")
 
