@@ -32,7 +32,7 @@ class StockCalculator():
         """
         holdCost = (self.totalBuyValue - self.totalSellValue)/ self.holdAmount if self.holdAmount>0 else 0
         holdCostValue = holdCost * self.holdAmount
-        return holdCost, holdCostValue
+        return int(holdCost), int(holdCostValue)
 
     def GetBuyAvgPrice(self):
         BuyAvgPrice = self.totalBuyValue / self.totalBuyAmount
