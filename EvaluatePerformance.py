@@ -22,7 +22,7 @@ def EvaluatePerformance():
     stockList = pd.unique(stockRecord["Stock"])
     stockReturnSummary = pd.DataFrame(
             columns=["股票代號", "股票名稱", "持有股份", "買入均價", 
-                     "市場價格", "賣出股份", "賣出均價", "賣出金額", 
+                     "市場價格", "賣出股份", "賣出均價", "賣出金額", "總買進支出",
                      "持倉總成本", "持倉總價值", "未實現損益", "已實現總損益", "總損益", "總損益率"])
     
     # Read latest price information
@@ -30,6 +30,7 @@ def EvaluatePerformance():
 
     totalValue = 0
     totalCost = 0
+    totalHoldCost = 0
     totalHoldProfit = 0
     totalRealizedProfit = 0
     for idx, stock in enumerate(stockList):
@@ -81,22 +82,23 @@ def EvaluatePerformance():
         profit = holdProfit + realizedProfit
         profitRate = str( round(profit / totalBuyValue * 100, 1) ) + "%"
 
+        totalCost += totalBuyValue
         totalHoldProfit += holdProfit
         totalRealizedProfit += realizedProfit
         totalValue += latestValue
-        totalCost += holdCostValue
+        totalHoldCost += holdCostValue
         
         # ["股票代號", "股票名稱", "持有股份", "買入均價",
-        #  "市場價格", "賣出股份", "賣出均價", "賣出總金額", 
+        #  "市場價格", "賣出股份", "賣出均價", "賣出總金額", "總買進支出",
         #  "持倉總成本", "持倉總價值", "未實現損益", "已實現總損益", "總損益", "總損益率"]
         stockReturnSummary.loc[idx] = [
                 stock, name_select, holdAmount, BuyAvgPrice,
-                price_select, totalSellAmount, SellAvgPrice, totalSellValue, 
+                price_select, totalSellAmount, SellAvgPrice, totalSellValue, totalBuyValue, 
                 holdCostValue, latestValue, holdProfit, realizedProfit, profit, profitRate]
     
     
     # Calculate Total Value
-    UnrealizedProfitRate = (totalValue-totalCost)/totalCost if totalCost!=0 else 0 
+    UnrealizedProfitRate = (totalValue-totalHoldCost)/totalHoldCost if totalHoldCost!=0 else 0 
     UnrealizedProfitRate = str(round(UnrealizedProfitRate*100, 1)) + "%"
 
     totalProfit = totalHoldProfit + totalRealizedProfit
@@ -106,7 +108,7 @@ def EvaluatePerformance():
     
     stockReturnSummary.loc[idx+1] = [
             "Total", "-", "-", "-", "-", "-", "-", "-",
-            totalCost,  totalValue, totalHoldProfit, totalRealizedProfit, totalProfit, totalProfitRate,
+            totalCost, totalHoldCost,  totalValue, totalHoldProfit, totalRealizedProfit, totalProfit, totalProfitRate,
             ]
 
     # stockReturnSummary.loc[idx+2] = [
