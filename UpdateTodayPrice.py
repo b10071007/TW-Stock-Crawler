@@ -30,7 +30,9 @@ def GetStockInfo(date, stock_list):
 
     ### OTC ### 
     # Download stock information
-    url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={}'.format(date)
+    # url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw'.format(date)
+    year, mon, day = str(int(date[:4])-1911), date[4:6], date[6:8]
+    url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={}/{}/{}'.format(year, mon, day)
     page = requests.get(url)
     result = page.json()
 
